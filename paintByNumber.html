@@ -1,0 +1,221 @@
+<!doctype HTML>
+<html>
+    <head>
+        <title>Grid Painter</title>
+        <style>
+            #app {
+                width:1300px;
+                margin-right:auto;
+                margin-left:auto;
+                border:2px solid black;
+                -webkit-user-select: none;
+            }
+            
+            h1 { text-align:center; }
+            
+            #stage {
+                position:relative;
+                margin-left:auto;
+                margin-right:auto;
+            }
+            
+            #paintPanel { 
+                text-align:center; 
+                padding:4px;
+            }
+            
+            #paintColorDiv {
+                background-color:white;
+                width:30px;
+                height:30px;
+                border:2px solid black;
+                padding:4px;
+                margin-left:auto;
+                margin-right:auto;
+            }
+            
+            .colorSwatch {
+                display:inline-block;
+                width:30px;
+                margin:4px;
+                padding:4px;
+                border:2px solid #dddddd;
+                color:grey;
+                text-align:center;
+                font-size:22px;
+                font-weight:bold;
+                font-family:Verdana;
+            }
+            button{
+             text-align:center;
+            margin:5px;
+        }
+            #swatchWhite {background-color: white;}
+            #swatchBlack {background-color: black;}
+            #swatchOrange {background-color: #fc8b1a;}
+            #swatchBlue {background-color: #1baafc;}
+            
+        </style>
+    
+    </head>
+    <body>
+        
+    <div id="app">
+        <h1>Let's Paint Portal</h1>
+        <div id="stage"></div>
+        <div id="paintPannel">
+            <div id=paintColorDiv></div>
+            <center>
+            <div id="swatchWhite" class="colorSwatch" onclick="pickColor('white');">1</div>
+            <div id="swatchOrange" class="colorSwatch" onclick="pickColor('#fc8b1a');">2</div>
+            <div id="swatchBlue" class="colorSwatch" onclick="pickColor('#1baafc');">3</div>
+            <div id="swatchBlack" class="colorSwatch" onclick="pickColor('black');">4</div>
+            </center>
+        </div>
+        <center>
+        <button id="reset" onclick="myFunction()">Reset Board</button>
+        </center>
+    </div>
+    
+    <script>
+        
+        document.getElementById("stage").addEventListener("mouseover", mouseOver);
+        document.getElementById("stage").addEventListener("mousedown", mouseDown);
+        document.getElementById("stage").addEventListener("mouseup", mouseUp);
+        
+        window.addEventListener("keyup", movement, false);
+        function movement(event){
+            //console.log("keyCode = " + event.keyCode);
+        if(event.keyCode == 49){
+            //1
+            pickColor('white');
+            } 
+        if(event.keyCode == 50){
+            //2
+            pickColor('#fc8b1a');
+            }
+    
+        if(event.keyCode == 51){
+            //3
+            pickColor('#1baafc');
+            }
+        if(event.keyCode == 52){
+            //3
+           pickColor('black');
+            }
+        }
+        
+        
+        
+        var down = 0;
+        
+        var cellSize = 27;
+        
+        var pixelMap = [
+            [1,1,1,1,1,1,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,2,2,2,2,2,2,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,3,3,3,3,3,3,1,1,1,1,1,1,1],
+            [1,1,1,1,2,2,2,2,2,2,2,2,1,2,1,1,1,1,1,1,1,1,1,1,1,1,3,1,3,3,3,3,3,3,3,3,1,1,1,1,1,1],
+            [1,1,1,2,2,2,2,1,1,1,2,2,2,1,2,1,1,1,1,1,1,1,1,1,1,3,1,3,3,3,1,1,1,3,3,3,3,1,1,1,1,1],
+            [1,1,1,2,4,4,4,1,1,1,1,2,2,2,1,2,1,1,1,1,1,1,1,1,3,1,3,3,3,1,1,1,1,1,3,3,3,1,1,1,1,1],
+            [1,1,2,4,4,4,4,4,1,1,1,1,2,2,1,2,1,1,1,1,1,1,1,1,3,1,3,3,1,1,1,1,1,1,1,3,3,3,1,1,1,1],
+            [1,1,2,4,4,4,4,4,1,1,1,1,1,2,2,2,1,1,1,1,1,1,1,1,3,3,3,1,1,1,1,1,1,1,1,3,3,3,1,1,1,1],
+            [1,2,2,2,4,4,4,1,1,1,1,1,1,1,2,2,1,1,1,1,1,1,1,1,3,3,1,1,1,1,1,1,1,1,1,3,3,3,3,1,1,1],
+            [1,2,2,1,2,1,1,1,1,1,4,1,1,1,2,2,2,1,1,1,1,1,1,3,3,3,1,1,1,1,1,1,1,1,3,3,3,3,1,1,1,1],
+            [1,2,2,1,2,1,1,1,4,4,4,1,1,1,2,2,2,1,1,1,1,1,1,3,3,3,1,1,1,1,1,1,1,1,3,3,3,3,1,1,1,1],
+            [1,2,2,1,1,2,4,4,4,4,4,1,1,1,1,2,2,1,1,1,1,1,1,3,3,1,1,1,4,4,4,1,1,1,1,1,3,3,3,1,1,1],
+            [1,2,2,2,1,4,4,4,4,4,4,1,1,1,1,2,2,2,1,1,1,1,3,3,3,1,1,1,4,4,4,4,4,4,1,1,3,3,3,1,1,1],
+            [1,1,2,2,4,4,4,4,4,4,4,1,1,1,1,2,2,2,1,1,1,1,3,3,3,1,1,1,4,4,4,4,4,4,4,1,3,3,1,1,1,1],
+            [1,1,2,2,4,4,1,4,4,4,4,1,1,1,1,1,2,2,1,1,1,1,3,3,1,1,1,1,4,4,4,1,1,4,4,4,3,3,1,1,1,1],
+            [1,1,2,4,4,1,1,1,4,4,4,1,1,1,1,1,2,2,1,1,1,1,3,3,1,1,1,1,4,4,1,1,1,1,4,4,4,3,1,1,1,1],
+            [1,4,4,4,4,1,1,1,4,4,4,1,1,1,1,1,2,2,2,1,1,3,3,3,1,1,1,1,4,4,1,1,1,1,1,1,4,4,4,4,1,1],
+            [4,4,4,2,1,1,1,1,1,4,4,1,1,1,1,1,2,2,2,1,1,3,3,3,1,1,1,1,4,4,1,1,1,1,1,1,3,4,4,4,4,1],
+            [4,4,2,2,1,1,1,1,1,4,4,1,1,1,1,1,2,2,2,1,1,3,3,3,1,1,1,1,4,4,1,1,1,1,1,1,3,3,4,4,4,1],
+            [1,1,1,2,2,1,1,1,1,4,4,1,1,1,1,1,2,2,2,1,1,3,3,3,1,1,1,1,4,4,4,1,1,1,1,3,3,1,1,1,1,1],
+            [1,1,1,2,2,1,1,1,1,4,4,1,1,1,1,1,2,2,2,1,1,3,3,3,1,1,1,1,4,4,4,1,1,1,1,3,3,1,1,1,1,1],
+            [1,1,1,2,2,2,1,1,4,4,4,1,1,1,1,1,2,2,2,1,1,3,3,3,1,1,1,1,4,4,4,1,1,1,3,3,3,1,1,1,1,1],
+            [1,1,1,1,2,2,4,4,4,4,1,1,1,1,1,1,2,2,2,1,1,3,3,3,1,1,1,1,4,4,4,4,1,1,3,3,1,1,1,1,1,1],
+            [1,1,1,1,2,4,4,4,1,1,1,1,1,1,1,1,2,2,2,1,1,3,3,3,1,1,1,1,4,4,4,4,4,3,3,3,1,1,1,4,4,4],
+            [1,1,1,1,1,4,4,1,1,1,1,1,1,1,2,1,2,2,1,1,1,1,3,3,1,3,1,1,4,4,4,4,4,4,3,3,1,1,4,4,4,1],
+            [1,1,1,1,1,4,4,1,1,1,1,1,1,1,2,1,2,2,1,1,1,1,3,3,1,3,1,1,1,1,4,4,4,4,4,4,1,4,4,4,1,1],
+            [1,1,1,1,1,1,4,4,2,1,1,1,2,2,1,2,2,2,1,1,1,1,3,3,3,1,3,3,1,1,1,3,3,4,4,4,4,4,4,1,1,1],
+            [1,1,1,1,1,1,4,4,2,2,2,2,2,1,2,2,2,1,1,1,1,1,1,3,3,3,1,3,3,3,3,3,3,3,3,4,4,4,1,1,1,1],
+            [1,1,1,1,1,1,1,4,4,2,2,1,1,2,2,2,1,1,1,1,1,1,1,1,3,3,3,1,1,3,3,3,3,1,1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,4,4,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3,1,1,1,1,1,1,1,1,1],
+            ];
+            
+            var paintColor= "";
+    
+            buildStage();
+            pickColor("white");
+            
+            
+            function pickColor(thisColor) {
+                paintColor = thisColor;
+                var paintColorDiv = document.getElementById("paintColorDiv");
+                paintColorDiv.style.backgroundColor = paintColor;
+            }
+            
+            function paintCell(event) {
+                var thisCell = event.target;
+                thisCell.style.backgroundColor = paintColor;
+            }
+            
+            function buildStage() {
+                var totalRows = pixelMap.length;
+                var totalCols = pixelMap[0].length;
+                
+                var stage = document.getElementById("stage");
+                stage.style.width = cellSize * totalCols + "px";
+                stage.style.height = cellSize * totalRows + "px";
+                stage.style.position = "relative";
+                
+                for (var row = 0; row < totalRows; row++){
+                    for (var col = 0; col < totalCols; col++){
+                        var newDiv = document.createElement("div");
+                        newDiv.innerHTML = pixelMap[row][col];
+                        
+                        newDiv.style.position = "absolute";
+                        newDiv.style.width = cellSize + "px";
+                        newDiv.style.height = cellSize + "px";
+                        newDiv.style.left = cellSize * col + "px";
+                        newDiv.style.top = cellSize * row + "px";
+                        newDiv.style.backgroundColor = "white";
+                        newDiv.style.textAlign = "center";
+                        newDiv.style.fontFamily = "Verdana";
+                        newDiv.style.color = "grey";
+                        newDiv.style.border = "1px solid black";
+                        
+                        newDiv.addEventListener("click", paintCell, false);
+                        
+                        stage.appendChild(newDiv);
+                    }
+                }
+            }
+            function myFunction(){
+                console.log("Reset");
+                var c = document.getElementById("stage").children;
+                var i;
+                for (i = 0; i < c.length; i++) {
+                    c[i].style.backgroundColor = "white";
+                }
+            }
+    
+            function mouseOver(event){
+                if(down == 1){
+                   var thisCell = event.target;
+                    thisCell.style.backgroundColor = paintColor; 
+                }
+            }
+            
+            function mouseDown() {
+                down = 1;
+            }
+            
+            function mouseUp() {
+               down = 0;
+            }
+    </script>
+    
+    
+    </body>
+</html>
